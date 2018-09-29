@@ -52,7 +52,8 @@ dataset.
 
 Load Necessary Packages
 
-``` {r echo = TRUE}
+
+```r
 library(ggplot2)
 library(plyr)
 library(dplyr)
@@ -60,17 +61,18 @@ library(timeDate)
 ```
 
 ## Loading and preprocessing the data
-```{r echo = TRUE}
+
+```r
 setwd("F:/Courses/Coursera/John_Hopkins_University_Data_Science/5_Reproducible_Research/Week 2/RepData_PeerAssessment1")
 unzip(zipfile = "activity.zip")
 Activity <- read.csv("activity.csv", 
                  header = TRUE, 
                  colClasses = c("numeric", "Date", "numeric"))
-
 ```
 
 What is mean total number of steps taken per day?
-```{r echo = TRUE}
+
+```r
 total_steps <- tapply(Activity$steps, 
                       Activity$date, 
                       FUN = sum, 
@@ -78,13 +80,30 @@ total_steps <- tapply(Activity$steps,
 qplot(total_steps, 
       binwidth = 1000, 
       xlab = "Total number of steps taken/day")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+```r
 mean(total_steps, na.rm = TRUE)
+```
+
+```
+## [1] 9354.23
+```
+
+```r
 median(total_steps, na.rm = TRUE)
+```
+
+```
+## [1] 10395
 ```
 
 
 What is the average daily activity pattern?
-```{r echo = TRUE}
+
+```r
 average <- aggregate(x = list(steps = Activity$steps), 
                    by = list(interval = Activity$interval),
                    FUN = mean, 
@@ -97,10 +116,18 @@ ggplot(data = average, aes(x = interval,
              y = "average number of steps taken")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+
 Which 5-minute interval contains the maximum number of steps
 
-```{r echo = TRUE}
+
+```r
 average[which.max(average$steps),]
+```
+
+```
+##     interval    steps
+## 104      835 206.1698
 ```
 
 
@@ -111,14 +138,16 @@ If calculate the mean number of steps per 5-minute interval
 Then this can be added to the dataset as NA value
 First, create a copy of data set with NA rows and remove all rows with NA
 and also define the weekdays
-```{r echo = TRUE}
+
+```r
 Activity$weekday <- weekdays(Activity$date)
 Activity_NA <- Activity
 Activity_NoNA <- Activity[complete.cases(Activity),]
 ```
 
 Second, calculate the mean per day and interval
-```{r echo = TRUE}
+
+```r
 mean_weekday <- ddply(Activity_NA, 
                       .(interval, weekday),
                       summarise,
@@ -126,7 +155,8 @@ mean_weekday <- ddply(Activity_NA,
                                          na.rm = TRUE),2))
 ```
 Total number of steps per day 
-```{r echo = TRUE}
+
+```r
 Mean_Steps <- ddply(Activity_NA, 
                     .(interval),
                     summarise,
@@ -134,33 +164,43 @@ Mean_Steps <- ddply(Activity_NA,
                                  na.rm = TRUE))
 ```
 Get list of indices of NA
-```{r echo = TRUE}
+
+```r
 naIdx <- which(is.na(Activity_NA$steps))
 ```
 Merge Activity_NA with Mean_Steps
-```{r echo = TRUE}
+
+```r
 merged_NA <- merge(Activity_NA, 
                    Mean_Steps,
                    by = "interval",
                    suffixes = c(".actual", ".stepsInt"))
 ```
 Create new dataset with merged
-```{r echo = TRUE}
+
+```r
 Activity_Complete <- Activity_NA
 ```
 Replace NA with steps value
-```{r echo = TRUE}
+
+```r
 Activity_Complete[naIdx, "steps"] <- merged_NA[naIdx, "steps.stepsInt"]
 ```
 
 Check
-```{r echo = TRUE}
+
+```r
 paste("Missing values in new dataset ", sum(is.na(Activity_Complete)))
+```
+
+```
+## [1] "Missing values in new dataset  0"
 ```
 Should return 0
 
 Calculate total number of steps per day
-```{r echo = TRUE}
+
+```r
 Steps_Day <- ddply(Activity_Complete, 
                    .(date), 
                    summarise,
@@ -168,7 +208,8 @@ Steps_Day <- ddply(Activity_Complete,
 ```
 
 Create new dataset with NA filled and plot histogram
-```{r echo = TRUE}
+
+```r
 plot(Steps_Day$date,
      Steps_Day$steps,
      type = "h",
@@ -179,38 +220,54 @@ abline(h = mean(Steps_Day$steps, na.rm = TRUE),
        col = "red",
        lwd = 2)
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 Calculate mean and median
-```{r echo = TRUE}
+
+```r
 Sum_Steps_Day <- ddply(Activity_Complete, 
                        .(date),
                        summarise,
                        steps = sum(steps))
 ```
 Mean
-```{r echo = TRUE}
+
+```r
 paste("Mean steps per day is ", round(mean(Sum_Steps_Day$steps), 0))
 ```
+
+```
+## [1] "Mean steps per day is  10890"
+```
 Median
-```{r echo = TRUE}
+
+```r
 paste("Median steps per day is ", round(median(Sum_Steps_Day$steps), 0))
+```
+
+```
+## [1] "Median steps per day is  11015"
 ```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 Set weekday or weekend
-```{r echo = TRUE}
+
+```r
 Activity_Complete$daytype <- lapply(Activity_Complete$date, 
                                     function(x) ifelse(isWeekday(x, wday = 1:5), 
                                                                                'weekday', 
                                                                                'weekend'))
 ```
 Convert list to vector
-```{r echo = TRUE}
+
+```r
 Activity_Complete$daytype <- unlist(Activity_Complete$daytype)
 ```
 Create factor variable
-```{r echo = TRUE}
+
+```r
 Activity_Complete$daytype <- as.factor(Activity_Complete$daytype)
 
 Day_Interval_Steps <- ddply(Activity_Complete, 
@@ -221,7 +278,8 @@ Day_Interval_Steps <- ddply(Activity_Complete,
 ```
 
 Plot the time series
-```{r echo = TRUE}
+
+```r
 ggplot(Day_Interval_Steps, 
        aes(x = interval,
            y = steps)) +
@@ -230,5 +288,6 @@ ggplot(Day_Interval_Steps,
              x = "Interval",
              y = "Number of steps") +
         facet_grid(daytype ~ .)
-        
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
